@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Main Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bg: #000;
+      --fg: #0f0;
+      --accent: #ff0;
+      --panel: #0a0a0a;
+      --border: #0f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font: 13px 'Courier New', monospace;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 24px;
+      letter-spacing: 4px;
+      color: var(--fg);
+      text-shadow: 0 0 10px var(--fg);
+      margin-bottom: 40px;
+      padding: 20px;
+      border: 2px solid var(--border);
+      background: var(--panel);
+    }
+
+    .nav-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .nav-card {
+      background: var(--panel);
+      border: 2px solid var(--border);
+      padding: 20px;
+      transition: all 0.3s;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+    }
+
+    .nav-card:hover {
+      background: rgba(0, 255, 0, 0.1);
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+      transform: translateY(-5px);
+    }
+
+    .nav-card h2 {
+      color: var(--fg);
+      font-size: 18px;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+
+    .nav-card p {
+      color: #888;
+      font-size: 11px;
+      line-height: 1.6;
+    }
+
+    .info-section {
+      background: var(--panel);
+      border: 2px solid var(--border);
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .info-section h3 {
+      color: var(--accent);
+      font-size: 14px;
+      letter-spacing: 2px;
+      margin-bottom: 15px;
+    }
+
+    .info-section ul {
+      list-style: none;
+      padding-left: 20px;
+    }
+
+    .info-section li {
+      color: var(--fg);
+      font-size: 11px;
+      margin-bottom: 8px;
+      line-height: 1.6;
+    }
+
+    .info-section li:before {
+      content: "▸ ";
+      color: var(--accent);
+      margin-right: 5px;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      padding: 20px;
+      color: #666;
+      font-size: 10px;
+      letter-spacing: 2px;
+    }
+
+    a {
+      color: var(--fg);
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>◉ PROJECT DASHBOARD ◉</h1>
+
+    <div class="nav-grid">
+      <a href="?page=MD" class="nav-card">
+        <h2>▸ MAP VISUALIZATION</h2>
+        <p>Interactive zip code network map showing connections from target location to all respondent locations. Features automatic route tracing along roads.</p>
+      </a>
+
+      <a href="?page=dashboard" class="nav-card">
+        <h2>▸ DATA DASHBOARD</h2>
+        <p>View analytics, charts, and statistics from your collected data. Real-time updates and export capabilities.</p>
+      </a>
+
+      <a href="?page=reports" class="nav-card">
+        <h2>▸ REPORTS</h2>
+        <p>Generate comprehensive reports, export data in various formats, and schedule automated reports.</p>
+      </a>
+
+      <a href="?page=settings" class="nav-card">
+        <h2>▸ SETTINGS</h2>
+        <p>Configure application settings, manage data sources, and customize visualizations.</p>
+      </a>
+    </div>
+
+    <div class="info-section">
+      <h3>▸ Quick Links</h3>
+      <ul>
+        <li><a href="?page=MD">Open Map Visualization</a> - View network connections</li>
+        <li><a href="#" onclick="refreshData()">Refresh Data</a> - Pull latest from spreadsheet</li>
+        <li><a href="#" onclick="viewSheet()">View Source Sheet</a> - Open FRC sheet</li>
+      </ul>
+    </div>
+
+    <div class="info-section">
+      <h3>▸ System Information</h3>
+      <ul>
+        <li>Data Source: Sheet "FRC", Column F (Current 5 Digit Zip Code)</li>
+        <li>Target Location: 5317 Charlotte St, Kansas City, MO 64110</li>
+        <li>Auto-Routing: Enabled (starts automatically on map page)</li>
+        <li>Last Updated: <span id="lastUpdate">Loading...</span></li>
+      </ul>
+    </div>
+
+    <div class="footer">
+      POWERED BY GOOGLE APPS SCRIPT // <?= new Date().getFullYear() ?>
+    </div>
+  </div>
+
+  <script>
+    // Get current timestamp
+    document.getElementById('lastUpdate').textContent = new Date().toLocaleString();
+
+    function refreshData() {
+      alert('Data refresh functionality - implement this to clear cache and reload data');
+      // You can call a Google Apps Script function here
+      // google.script.run.withSuccessHandler(callback).refreshCachedData();
+    }
+
+    function viewSheet() {
+      // This would open the spreadsheet
+      // In a real implementation, you'd get the spreadsheet URL from the backend
+      alert('This would open the FRC sheet in your spreadsheet');
+    }
+
+    // Add any additional navigation or initialization code here
+  </script>
+</body>
+</html>
