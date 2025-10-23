@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Display Mode - Auto Rotation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bg: #000;
+      --fg: #0f0;
+      --accent: #ff0;
+      --panel: #0a0a0a;
+      --border: #0f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    /* Full screen iframe */
+    .display-frame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: var(--bg);
+    }
+
+    /* Control Bar */
+    .control-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(10, 10, 10, 0.95);
+      border-top: 2px solid var(--border);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 3000;
+      transform: translateY(100%);
+      transition: transform 0.3s;
+    }
+
+    .control-bar.visible {
+      transform: translateY(0);
+    }
+
+    /* Auto-show on hover */
+    body:hover .control-bar.auto-hide {
+      transform: translateY(0);
+    }
+
+    .control-section {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .control-btn {
+      background: transparent;
+      color: var(--fg);
+      border: 1px solid var(--fg);
+      padding: 6px 12px;
+      font: 10px 'Courier New', monospace;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+
+    .control-btn:hover {
+      background: var(--fg);
+      color: #000;
+      box-shadow: 0 0 10px var(--fg);
+    }
+
+    .control-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .control-btn.active {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
+
+    .page-indicator {
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: var(--fg);
+      min-width: 150px;
+      text-align: center;
+    }
+
+    .page-name {
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .timer-display {
+      font-size: 11px;
+      color: #888;
+      min-width: 80px;
+      text-align: center;
+    }
+
+    .progress-bar {
+      width: 200px;
+      height: 4px;
+      background: #333;
+      position: relative;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--fg);
+      width: 0%;
+      transition: width 0.1s linear;
+      box-shadow: 0 0 10px var(--fg);
+    }
+
+    /* Transition overlay */
+    .transition-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--bg);
+      z-index: 2000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .transition-overlay.active {
+      opacity: 1;
+    }
+
+    /* Loading indicator */
+    .loading-indicator {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(10, 10, 10, 0.9);
+      border: 2px solid var(--fg);
+      padding: 10px 15px;
+      font-size: 10px;
+      letter-spacing: 1px;
+      z-index: 3001;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .loading-indicator.show {
+      opacity: 1;
+    }
+
+    /* Fullscreen button */
+    .fullscreen-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(10, 10, 10, 0.8);
+      color: var(--fg);
+      border: 1px solid var(--fg);
+      padding: 8px 12px;
+      font: 10px 'Courier New', monospace;
+      cursor: pointer;
+      z-index: 3001;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    body:hover .fullscreen-btn {
+      opacity: 1;
+    }
+
+    .fullscreen-btn:hover {
+      background: var(--fg);
+      color: #000;
+    }
+
+    /* Settings panel */
+    .settings-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 300px;
+      height: 100%;
+      background: rgba(10, 10, 10, 0.98);
+      border-left: 2px solid var(--border);
+      padding: 20px;
+      z-index: 4000;
+      transform: translateX(100%);
+      transition: transform 0.3s;
+      overflow-y: auto;
+    }
+
+    .settings-panel.open {
+      transform: translateX(0);
+    }
+
+    .settings-title {
+      font-size: 14px;
+      color: var(--accent);
+      letter-spacing: 2px;
+      margin-bottom: 20px;
+    }
+
+    .setting-item {
+      margin-bottom: 20px;
+    }
+
+    .setting-label {
+      font-size: 10px;
+      color: #888;
+      letter-spacing: 1px;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    .setting-input {
+      width: 100%;
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid var(--fg);
+      padding: 8px;
+      font: 11px 'Courier New', monospace;
+    }
+
+    .setting-checkbox {
+      margin-right: 8px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Display Frame -->
+  <iframe id="displayFrame" class="display-frame" src=""></iframe>
+
+  <!-- Transition Overlay -->
+  <div class="transition-overlay" id="transitionOverlay"></div>
+
+  <!-- Loading Indicator -->
+  <div class="loading-indicator" id="loadingIndicator">
+    ⟳ LOADING...
+  </div>
+
+  <!-- Fullscreen Button -->
+  <button class="fullscreen-btn" onclick="toggleFullscreen()">
+    ⛶ FULLSCREEN
+  </button>
+
+  <!-- Control Bar -->
+  <div class="control-bar auto-hide" id="controlBar">
+    <div class="control-section">
+      <button class="control-btn" onclick="previousPage()">◀ PREV</button>
+      <button class="control-btn" id="playPauseBtn" onclick="togglePlayPause()">⏸ PAUSE</button>
+      <button class="control-btn" onclick="nextPage()">NEXT ▶</button>
+    </div>
+
+    <div class="control-section">
+      <div class="page-indicator">
+        <span id="pageCounter">1/5</span> • <span class="page-name" id="pageName">MAP</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="timer-display" id="timerDisplay">10s</div>
+    </div>
+
+    <div class="control-section">
+      <button class="control-btn" onclick="toggleSettings()">⚙ SETTINGS</button>
+      <button class="control-btn" onclick="exitDisplayMode()">✕ EXIT</button>
+    </div>
+  </div>
+
+  <!-- Settings Panel -->
+  <div class="settings-panel" id="settingsPanel">
+    <div class="settings-title">▸ DISPLAY SETTINGS</div>
+
+    <div class="setting-item">
+      <label class="setting-label">INTERVAL (SECONDS)</label>
+      <input type="number" class="setting-input" id="intervalInput" value="10" min="1" max="300" onchange="updateInterval()">
+    </div>
+
+    <div class="setting-item">
+      <label class="setting-label">PAGES TO DISPLAY (COMMA SEPARATED)</label>
+      <input type="text" class="setting-input" id="pagesInput" value="home,MD,dashboard,reports" onchange="updatePages()">
+    </div>
+
+    <div class="setting-item">
+      <label class="setting-label">
+        <input type="checkbox" class="setting-checkbox" id="loopCheckbox" checked onchange="updateLoop()">
+        LOOP CONTINUOUSLY
+      </label>
+    </div>
+
+    <div class="setting-item">
+      <label class="setting-label">
+        <input type="checkbox" class="setting-checkbox" id="transitionCheckbox" checked onchange="updateTransition()">
+        FADE TRANSITIONS
+      </label>
+    </div>
+
+    <div class="setting-item">
+      <label class="setting-label">
+        <input type="checkbox" class="setting-checkbox" id="autoHideCheckbox" checked onchange="updateAutoHide()">
+        AUTO-HIDE CONTROLS
+      </label>
+    </div>
+
+    <div class="setting-item">
+      <button class="control-btn" onclick="applySettings()" style="width: 100%;">APPLY SETTINGS</button>
+    </div>
+
+    <div class="setting-item">
+      <button class="control-btn" onclick="toggleSettings()" style="width: 100%;">CLOSE</button>
+    </div>
+  </div>
+
+  <script>
+    // Configuration
+    const config = {
+      pages: ['home', 'MD', 'dashboard', 'reports'],
+      interval: 10000, // milliseconds
+      loop: true,
+      transition: true,
+      autoHide: true,
+      currentIndex: 0,
+      isPaused: false,
+      timer: null,
+      startTime: 0,
+      elapsedTime: 0
+    };
+
+    // Get base URL
+    function getBaseUrl() {
+      return window.location.href.split('?')[0];
+    }
+
+    // Parse URL parameters and initialize
+    function initializeDisplay() {
+      const urlParams = new URLSearchParams(window.location.search);
+
+      // Get interval from URL (in seconds)
+      const intervalParam = urlParams.get('interval');
+      if (intervalParam) {
+        config.interval = parseInt(intervalParam) * 1000;
+        document.getElementById('intervalInput').value = intervalParam;
+      }
+
+      // Get pages from URL
+      const pagesParam = urlParams.get('pages');
+      if (pagesParam) {
+        config.pages = pagesParam.split(',').map(p => p.trim());
+        document.getElementById('pagesInput').value = pagesParam;
+      }
+
+      // Get loop setting from URL
+      const loopParam = urlParams.get('loop');
+      if (loopParam !== null) {
+        config.loop = loopParam !== 'false';
+        document.getElementById('loopCheckbox').checked = config.loop;
+      }
+
+      // Start index
+      const startParam = urlParams.get('start');
+      if (startParam) {
+        config.currentIndex = parseInt(startParam) || 0;
+      }
+
+      // Load first page
+      loadCurrentPage();
+      startRotation();
+    }
+
+    // Load current page
+    function loadCurrentPage() {
+      if (config.currentIndex >= config.pages.length) {
+        if (config.loop) {
+          config.currentIndex = 0;
+        } else {
+          stopRotation();
+          return;
+        }
+      }
+
+      const page = config.pages[config.currentIndex];
+      const frame = document.getElementById('displayFrame');
+
+      // Show loading indicator
+      document.getElementById('loadingIndicator').classList.add('show');
+
+      // Apply transition
+      if (config.transition) {
+        const overlay = document.getElementById('transitionOverlay');
+        overlay.classList.add('active');
+        setTimeout(() => {
+          frame.src = `${getBaseUrl()}?page=${page}`;
+          setTimeout(() => {
+            overlay.classList.remove('active');
+          }, 300);
+        }, 300);
+      } else {
+        frame.src = `${getBaseUrl()}?page=${page}`;
+      }
+
+      // Update UI
+      updateUI();
+
+      // Hide loading after frame loads
+      frame.onload = function() {
+        document.getElementById('loadingIndicator').classList.remove('show');
+      };
+    }
+
+    // Update UI elements
+    function updateUI() {
+      const page = config.pages[config.currentIndex];
+      const pageName = getPageDisplayName(page);
+
+      document.getElementById('pageCounter').textContent =
+        `${config.currentIndex + 1}/${config.pages.length}`;
+      document.getElementById('pageName').textContent = pageName;
+      document.getElementById('timerDisplay').textContent =
+        `${Math.ceil(config.interval / 1000)}s`;
+    }
+
+    // Get display name for page
+    function getPageDisplayName(page) {
+      const names = {
+        'home': 'HOME',
+        'MD': 'MAP',
+        'dashboard': 'DASHBOARD',
+        'reports': 'REPORTS',
+        'analytics': 'ANALYTICS',
+        'settings': 'SETTINGS'
+      };
+      return names[page] || page.toUpperCase();
+    }
+
+    // Start rotation
+    function startRotation() {
+      stopRotation(); // Clear any existing timer
+      config.isPaused = false;
+      config.startTime = Date.now();
+      config.elapsedTime = 0;
+      updatePlayPauseButton();
+      scheduleNext();
+    }
+
+    // Stop rotation
+    function stopRotation() {
+      if (config.timer) {
+        clearTimeout(config.timer);
+        config.timer = null;
+      }
+      stopProgressBar();
+    }
+
+    // Schedule next page
+    function scheduleNext() {
+      config.timer = setTimeout(() => {
+        nextPage();
+      }, config.interval);
+      startProgressBar();
+    }
+
+    // Progress bar animation
+    let progressInterval;
+    function startProgressBar() {
+      stopProgressBar();
+      const progressFill = document.getElementById('progressFill');
+      const startTime = Date.now();
+      const duration = config.interval;
+
+      progressInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const percent = Math.min((elapsed / duration) * 100, 100);
+        progressFill.style.width = percent + '%';
+
+        if (percent >= 100) {
+          stopProgressBar();
+        }
+      }, 50);
+    }
+
+    function stopProgressBar() {
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+      }
+      document.getElementById('progressFill').style.width = '0%';
+    }
+
+    // Navigation functions
+    function nextPage() {
+      stopRotation();
+      config.currentIndex++;
+
+      if (config.currentIndex >= config.pages.length) {
+        if (config.loop) {
+          config.currentIndex = 0;
+        } else {
+          config.currentIndex = config.pages.length - 1;
+          return;
+        }
+      }
+
+      loadCurrentPage();
+      if (!config.isPaused) {
+        scheduleNext();
+      }
+    }
+
+    function previousPage() {
+      stopRotation();
+      config.currentIndex--;
+
+      if (config.currentIndex < 0) {
+        if (config.loop) {
+          config.currentIndex = config.pages.length - 1;
+        } else {
+          config.currentIndex = 0;
+          return;
+        }
+      }
+
+      loadCurrentPage();
+      if (!config.isPaused) {
+        scheduleNext();
+      }
+    }
+
+    function togglePlayPause() {
+      if (config.isPaused) {
+        // Resume
+        config.isPaused = false;
+        startRotation();
+      } else {
+        // Pause
+        config.isPaused = true;
+        stopRotation();
+      }
+      updatePlayPauseButton();
+    }
+
+    function updatePlayPauseButton() {
+      const btn = document.getElementById('playPauseBtn');
+      if (config.isPaused) {
+        btn.textContent = '▶ PLAY';
+        btn.classList.add('active');
+      } else {
+        btn.textContent = '⏸ PAUSE';
+        btn.classList.remove('active');
+      }
+    }
+
+    // Settings functions
+    function toggleSettings() {
+      document.getElementById('settingsPanel').classList.toggle('open');
+    }
+
+    function updateInterval() {
+      const value = parseInt(document.getElementById('intervalInput').value);
+      if (value >= 1 && value <= 300) {
+        config.interval = value * 1000;
+      }
+    }
+
+    function updatePages() {
+      const value = document.getElementById('pagesInput').value;
+      config.pages = value.split(',').map(p => p.trim()).filter(p => p);
+      if (config.currentIndex >= config.pages.length) {
+        config.currentIndex = 0;
+      }
+    }
+
+    function updateLoop() {
+      config.loop = document.getElementById('loopCheckbox').checked;
+    }
+
+    function updateTransition() {
+      config.transition = document.getElementById('transitionCheckbox').checked;
+    }
+
+    function updateAutoHide() {
+      config.autoHide = document.getElementById('autoHideCheckbox').checked;
+      const controlBar = document.getElementById('controlBar');
+      if (config.autoHide) {
+        controlBar.classList.add('auto-hide');
+      } else {
+        controlBar.classList.remove('auto-hide');
+        controlBar.classList.add('visible');
+      }
+    }
+
+    function applySettings() {
+      updateInterval();
+      updatePages();
+      updateLoop();
+      updateTransition();
+      updateAutoHide();
+
+      // Restart rotation with new settings
+      stopRotation();
+      loadCurrentPage();
+      if (!config.isPaused) {
+        startRotation();
+      }
+
+      toggleSettings();
+
+      // Update URL
+      updateURL();
+    }
+
+    // Update URL with current settings
+    function updateURL() {
+      const params = new URLSearchParams();
+      params.set('mode', 'display');
+      params.set('interval', config.interval / 1000);
+      params.set('pages', config.pages.join(','));
+      params.set('loop', config.loop);
+
+      const newUrl = `${getBaseUrl()}?${params.toString()}`;
+      window.history.replaceState({}, '', newUrl);
+    }
+
+    // Fullscreen toggle
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    // Exit display mode
+    function exitDisplayMode() {
+      if (confirm('Exit display mode and return to master page?')) {
+        window.location.href = `${getBaseUrl()}?mode=master`;
+      }
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+      switch(e.key) {
+        case 'ArrowRight':
+        case 'n':
+          nextPage();
+          break;
+        case 'ArrowLeft':
+        case 'p':
+          previousPage();
+          break;
+        case ' ':
+          e.preventDefault();
+          togglePlayPause();
+          break;
+        case 'f':
+          toggleFullscreen();
+          break;
+        case 's':
+          toggleSettings();
+          break;
+        case 'Escape':
+          if (document.getElementById('settingsPanel').classList.contains('open')) {
+            toggleSettings();
+          }
+          break;
+      }
+    });
+
+    // Initialize on load
+    window.addEventListener('load', initializeDisplay);
+
+    // Handle visibility change (pause when tab is hidden)
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden && !config.isPaused) {
+        // Tab hidden, pause
+        stopRotation();
+      } else if (!document.hidden && !config.isPaused) {
+        // Tab visible, resume
+        startRotation();
+      }
+    });
+  </script>
+</body>
+</html>
